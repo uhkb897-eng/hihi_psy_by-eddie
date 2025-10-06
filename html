@@ -1,0 +1,37 @@
+<div class="muted">Đăng nhập dưới tên</div>
+      <strong>${escapeHtml(state.user.name)}</strong>
+      <div class="muted">Tuổi: ${state.user.age || '-'}</div>
+    </div>`;
+  }else{
+    userBlock.innerHTML = `<div class="muted">Chưa đăng nhập</div>`;
+  }
+}
+function renderSurvey(){
+  $('#q1').value = state.survey.q1 || '';
+  $('#q2').value = state.survey.q2 || '';
+  $('#notes').value = state.survey.notes || '';
+}
+function updateScoreUI(){
+  scoreEl.textContent = state.score || 0;
+  let pct = Math.round((state.score/8)*100);
+  meter.style.width = pct + '%';
+  stateText.textContent = state.score === 0 ? 'Chưa bắt đầu' : (state.score < 8 ? 'Đang chơi' : 'Hoàn tất 8 trò');
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+// ----- Login & survey handlers -----
+loginForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = $('#username').value.trim();
+  const age = $('#age').value.trim();
+  if(!name){ alert('Vui lòng nhập tên.'); return; }
+  state.user = {name, age: age || null, ts: Date.now()};
+  saveState(state);
+  renderUser();
+  alert('Đăng nhập thành công — tên lưu cục bộ.');
+});
+saveSurveyBtn.addEventListener('click', ()=>{
+  state.survey = {
+    q1: $('#q1').value.trim(),
+    q2: $('#q2').value,
+    notes: $('
