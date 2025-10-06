@@ -1,4 +1,200 @@
-<div class="muted">Đăng nhập dưới tên</div>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Khảo sát nhẹ + Mini-game tâm lý</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#ff6b6b; --muted:#9aa4b2;
+      --glass: rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; min-height:100vh; background:
+      linear-gradient(180deg,#071021 0%, #081425 60%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="%23071421"/></svg>') no-repeat center/cover; color:#e6eef6;}
+    .wrap{max-width:980px;margin:28px auto;padding:20px;}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+    header h1{font-size:20px;margin:0}
+    .card{background:var(--card); padding:18px;border-radius:12px; box-shadow: 0 6px 24px rgba(3,6,12,0.6);}
+    .row{display:flex;gap:12px;align-items:center;}
+    .muted{color:var(--muted);font-size:13px}
+    input[type="text"], input[type="number"], textarea, select{
+      width:100%; padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);
+      background:var(--glass); color:inherit; resize:vertical;
+    }
+    button{background:var(--accent); border:none;padding:10px 14px;border-radius:10px;color:#071021;font-weight:600;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06); color:var(--muted)}
+    .two{display:grid;grid-template-columns:1fr 360px;gap:14px}
+    nav .menu{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .game-tile{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:12px;border-radius:10px; min-width:150px; cursor:pointer; border:1px solid rgba(255,255,255,0.03);}
+    .game-tile.disabled{opacity:0.5; cursor:default}
+    .status{margin-top:10px; font-weight:600}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .center{display:flex;align-items:center;justify-content:center}
+    /* game area */
+    #game-area{min-height:280px;padding:14px;border-radius:8px;background:linear-gradient(180deg,#06101a,#071522);border:1px solid rgba(255,255,255,0.02)}
+    .hidden{display:none}
+    /* simple visual */
+    .meter{height:12px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden}
+    .meter > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#ffb199);width:0%}
+    .badge{background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:999px;color:var(--muted);font-size:13px}
+    /* responsive */
+    @media (max-width:880px){ .two{grid-template-columns:1fr} .card{padding:12px} header{flex-direction:column;align-items:flex-start} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="card" style="padding:10px 14px;">
+        <strong>Mini Psych</strong>
+        <div class="muted">Khảo sát nhẹ + 8 mini-game — điểm "lửa" tối đa 8</div>
+      </div>
+      <div style="margin-left:auto" id="user-block" class="card" style="padding:10px 14px;">
+        <!-- filled by JS -->
+      </div>
+    </header>
+
+    <!-- LOGIN / SURVEY -->
+    <section class="two" style="gap:16px;">
+      <div class="card">
+        <h2 style="margin-top:0">1) Đăng nhập (local)</h2>
+        <form id="login-form">
+          <label class="muted">Tên (dùng để lưu local)</label>
+          <input type="text" id="username" placeholder="Nhập tên người chơi..." required />
+          <div style="height:8px"></div>
+          <label class="muted">Tuổi (tuỳ chọn)</label>
+          <input type="number" id="age" min="6" max="120" placeholder="Ví dụ: 23"/>
+          <div style="height:8px"></div>
+          <button type="submit">Đăng nhập</button>
+        </form>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)"/>
+
+        <h3 style="margin-bottom:6px">2) Khảo sát tâm lý (mẫu để tùy biến)</h3>
+        <div class="muted" style="font-size:13px;margin-bottom:8px">Bạn có thể sửa, thêm câu hoặc giữ trống để tuỳ biến sau.</div>
+        <form id="survey-form">
+          <!-- MẪU: thay / xóa / giữ trống theo ý bạn -->
+          <label class="muted">Câu 1 (mẫu)</label>
+          <input type="text" id="q1" placeholder="Bạn cảm thấy thư giãn hay căng thẳng khi chơi game?" />
+          <label class="muted" style="margin-top:8px">Câu 2 (mẫu)</label>
+          <select id="q2">
+            <option value="">-- Chọn mức độ --</option>
+            <option value="1">Rất ít</option>
+            <option value="2">Ít</option>
+            <option value="3">Trung bình</option>
+            <option value="4">Nhiều</option>
+            <option value="5">Rất nhiều</option>
+          </select>
+          <div style="height:8px"></div>
+          <label class="muted">Ghi chú (tùy chọn)</label>
+          <textarea id="notes" rows="3" placeholder="Bạn có thể để trống..."></textarea>
+          <div style="height:8px"></div>
+          <button type="button" id="save-survey" class="btn-ghost">Lưu khảo sát mẫu</button>
+          <div class="muted" style="margin-top:8px">Dữ liệu lưu cục bộ (localStorage), không gửi ra server.</div>
+        </form>
+      </div>
+
+      <!-- game menu + status -->
+      <aside class="card">
+        <h3 style="margin-top:0">Menu Mini-game</h3>
+        <div class="muted">Chọn 1 trò, hoàn thành sẽ cộng +1 điểm lửa (tối đa 8).</div>
+        <div class="menu" id="menu"></div>
+
+        <div style="height:12px"></div>
+        <div class="status">Điểm lửa: <span id="score">0</span>/8</div>
+        <div style="height:8px"></div>
+        <div class="meter" aria-hidden><i id="meter-fill"></i></div>
+        <div style="height:10px"></div>
+        <div class="muted"><strong>Trạng thái:</strong> <span id="state">Chưa bắt đầu</span></div>
+
+        <div style="height:12px"></div>
+        <button id="reset-btn" class="btn-ghost">Đặt lại dữ liệu (local)</button>
+        <div style="height:10px"></div>
+        <div class="muted">Sau khi hoàn tất 8 trò, nhấn nút <em>Xem dự đoán</em> ở dưới.</div>
+      </aside>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <!-- Game area -->
+    <div class="card">
+      <h2 style="margin-top:0">Khu chơi — Nội dung trò</h2>
+      <div id="game-area">
+        <div id="welcome" class="center" style="flex-direction:column;gap:8px">
+          <div class="muted">Chọn một trò từ menu bên phải để bắt đầu.</div>
+          <div class="muted">Mỗi trò có tiêu chí hoàn thành rõ ràng (hiện trong mô tả trò).</div>
+        </div>
+
+        <!-- dynamic content inserted here -->
+        <div id="game-root"></div>
+      </div>
+
+      <div style="height:12px"></div>
+      <div class="center" style="gap:8px">
+        <button id="view-result" class="btn-ghost">Xem dự đoán</button>
+        <button id="export-data" class="btn-ghost">Xuất dữ liệu (JSON)</button>
+        <div id="result-output" style="margin-left:10px"></div>
+      </div>
+    </div>
+
+    <footer class="muted center" style="margin-top:12px">Mini Psych — giải trí & tham khảo. Dữ liệu chỉ lưu cục bộ.</footer>
+  </div>
+
+<script>
+/*
+  App data model (localStorage):
+  - user: {name, age}
+  - survey: {q1,q2,notes}
+  - games: object keyed by id: {played:boolean,completed:boolean,metrics:{time,score,accuracy,...}}
+  - score: number (0-8)
+*/
+
+// ----- Utilities -----
+const $ = sel => document.querySelector(sel);
+const el = tag => document.createElement(tag);
+const LS = window.localStorage;
+const APP_KEY = 'mini_psych_v1';
+
+function loadState(){
+  try{
+    return JSON.parse(LS.getItem(APP_KEY)) || {};
+  }catch(e){ return {}; }
+}
+function saveState(state){
+  LS.setItem(APP_KEY, JSON.stringify(state));
+}
+function resetState(){
+  LS.removeItem(APP_KEY);
+  location.reload();
+}
+let state = loadState();
+state.user = state.user || null;
+state.survey = state.survey || {};
+state.games = state.games || {}; // filled per game id
+state.score = state.score || 0;
+
+// ----- UI init -----
+const userBlock = $('#user-block');
+const loginForm = $('#login-form');
+const surveyForm = $('#survey-form');
+const saveSurveyBtn = $('#save-survey');
+const menu = $('#menu');
+const scoreEl = $('#score');
+const meter = $('#meter-fill');
+const stateText = $('#state');
+const gameRoot = $('#game-root');
+const welcome = $('#welcome');
+const viewResultBtn = $('#view-result');
+const exportBtn = $('#export-data');
+const resetBtn = $('#reset-btn');
+const resultOutput = $('#result-output');
+
+function renderUser(){
+  if(state.user){
+    userBlock.innerHTML = `<div style="min-width:220px">
+      <div class="muted">Đăng nhập dưới tên</div>
       <strong>${escapeHtml(state.user.name)}</strong>
       <div class="muted">Tuổi: ${state.user.age || '-'}</div>
     </div>`;
